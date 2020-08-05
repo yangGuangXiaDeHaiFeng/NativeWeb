@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>JS进阶作业</title>
+    <style>
+        h1{
+            text-align: center;
+        }
+        .content{
+            width: 1200px;
+            margin: 0 auto;
+            padding: 10px;
+            border: 1px solid #b258f7;
+        }
+    </style>
+  <script>
+       function fun(n,o) {
+           console.log(o);
+           return{
+               fun:function (m) {
+                  return fun(m,n)
+               }
+           }
+       }
+       var a=fun(0);
+       a.fun(1);
+       a.fun(2);
+       a.fun(3);
+       var b=fun(0).fun(1).fun(2).fun(3);
+       var c=fun(0).fun(1);
+       c.fun(2);
+       c.fun(3);
+  </script>
+</head>
+<body>
+   <h1>JS进阶</h1>
+   <div class="content">
+   <h3>1、请使用ES5实现以下代码：</h3>
+   <pre>
+       <code>
+            var handler = {
+
+          id:"123456",
+          init:function(){
+              document.addEventListener("click",(event)=>this.doSomething(event.type));
+          },
+          doSomething:function(type){
+              console.log('type',type);
+              console.log("Handling " + type + " for " + this.id);
+          }
+      };
+      handler.init();
+       </code>
+   </pre>
+   <p><strong>解答：</strong>此处代码主要用到了ES6的新特性：箭头函数，所以改写时，只需要把箭头函数改为普通函数即可，但是需要注意的
+   是，箭头函数内部使用了“this”，这里涉及到了普通函数和箭头函数体内this的指向问题：箭头函数体内的this对象，就是定义时所在的对象，而不是使用时所在的对象。
+       经过分析发现，此处this指的是“handler”，所以使用ES5改写后调用“doSomething”的也应该是“handler”，因此，需要在调用的外面先用一个
+       中间变量_this接收this，具体代码如下：
+   </p>
+   <pre>
+       <code>
+             var handler = {
+          id:"123456",
+          init:function(){
+              var _this=this;
+              document.addEventListener("click",function (event) {
+                  _this.doSomething(event.type)
+              });
+          },
+          doSomething:function(type){
+              console.log('type',type);
+              console.log("Handling " + type + " for " + this.id);
+          }
+      };
+      handler.init();
+       </code>
+   </pre>
+       <h3>2、以下代码会输出什么？请解释原因</h3>
+       <pre>
+         <code>
+             function fun(n,o) {
+           console.log(o);
+           return{
+               fun:function (m) {
+                  return fun(m,n)
+               }
+           }
+       }
+       var a=fun(0);
+       a.fun(1);
+       a.fun(2);
+       a.fun(3);
+       var b=fun(0).fun(1).fun(2).fun(3);
+       var c=fun(0).fun(1);
+       c.fun(2);
+       c.fun(3);
+         </code>
+       </pre>
+       <p><strong>解答：</strong>预计输出
+       <pre>
+         <code>
+              undefined<br/>
+              0<br/>
+              0<br/>
+              0<br/>
+              undefined<br/>
+              0<br/>
+              1<br/>
+              2<br/>
+              undefined<br/>
+              0<br/>
+              1<br/>
+              1<br/>
+         </code>
+   </pre>
+       <strong>原因：  </strong>此处考察的是有关闭包的相关特性。闭包是指有权访问另一个函数作用域中的变量的函数。主要有以下三个特性：<br/>
+           ①函数嵌套函数；<br/>
+           ②函数内部可以引用函数外部的参数和变量；<br/>
+           ③被引用的参数和变量不会被垃圾回收机制回收；<br/>
+         根据闭包的特性②，可知，return的fun函数中的n其实就是外部函数中参数n，return中fun函数的return函数递归调用外部函数fun,
+       所以外部函数fun中n和m最层的m对应，m和最外层函数o对应。<br/>
+       var a=fun(0):进入外部fun函数，0赋值给n,o没有被赋值，默认为undefined，等同于fun(0,undefined),所以输出时为undefined；<br/>
+       a.fun(1):等同于fun(0,undefined).fun(1),所以a.fun(1)的返回值为fun(m,n),m是传进去的参数1，由于闭包特性③，n 依然在内存中存在为0，所以实际执行的是
+       fun(1,0),打印的值为0<br/>
+       a.fun(2):同a.fun(1),只不过换个参数m，打印值还为0<br/>
+       a.fun(3):同a.fun(1),只不过换个参数m，打印值还为0<br/>
+      对于<pre><code> var b=fun(0).fun(1).fun(2).fun(3);</code></pre><br/>
+       var b=fun(0):同 var a=fun(0)，输出为0；<br/>
+       .fun(1):即就是fun(0,undefined).fun(1),所以输出还是0；<br/>
+       .fun(2):即就是fun(0,undefined).fun(1).fun(2)一步步执行为fun(1,0).fun(2)、fun(2,1),所以输出为1；<br/>
+       .fun(3):即就是fun(0,undefined).fun(1).fun(2).fun(3)一步步执行为fun(1,0).fun(2).fun(3)、fun(2,1).fun(3)、fun(3,2),所以输出为2；<br/>
+       对于<pre><code>  var c=fun(0).fun(1);
+       c.fun(2);
+       c.fun(3)</code></pre><br/>
+       var c=fun(0).fun(1):经过上面分析，分别输出undefined、0；<br/>
+       c.fun(2):相当于fun(0).fun(1).fun(2),即就是fun(0,undefined).fun(1).fun(2)一步步执行为fun(1,0).fun(2)、fun(2,1),所以输出为1；<br/>
+       c.fun(3):相当于fun(0).fun(1).fun(3),即就是fun(0,undefined).fun(1).fun(3)一步步执行为fun(1,0).fun(3)、fun(3,1),所以输出为1；<br/>
+       <strong>小结：</strong> 关于“a"的除了第一步其他的相当于每次只换下m的参数（n任何改变），所以每次输出都一样；关于“b”的形式是一直迭代，所以输出会有变化，关于
+       “c”则是两种形式的组合体。
+       </p>
+
+   </div>
+
+</body>
+</html>
